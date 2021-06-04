@@ -88,11 +88,13 @@
     <QtRcc Include="QtCuttingStockProblem.qrc" />
     <QtUic Include="QtCuttingStockProblem.ui" />
     <QtMoc Include="QtCuttingStockProblem.h" />
+    <ClCompile Include="CuttingStockAlgorithm.cpp" />
     <ClCompile Include="OutputWidget.cpp" />
     <ClCompile Include="QtCuttingStockProblem.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CuttingStockAlgorithm.h" />
     <ClInclude Include="OutputWidget.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

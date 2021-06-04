@@ -14,6 +14,7 @@ public:
 
 public Q_SLOTS:
 	void cutAndShow();
+    void openFile();
 
 private:
     Ui::QtCuttingStockProblemClass ui;
