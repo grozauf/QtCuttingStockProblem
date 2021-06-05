@@ -2,48 +2,100 @@
 
 #include <algorithm>
 
-bool CuttingStockAlgorithm::Init(int stockWidth, int stockHeight, std::vector<Rect> &items, SortType sort) {
+bool CuttingStockAlgorithm::Init(int stockWidth, int stockHeight, std::vector<Rect> &items, SortType sort, SortOrder order) {
 	m_stockWidth = stockWidth;
 	m_stockHeight = stockHeight;
-	m_items = items;
 
 	if (sort == SortType::BYHEIGHT) {
 		std::sort(
 			items.begin(), items.end(), 
-			[](Rect& rl, Rect& rr) { 
-				return rl.height < rr.height; 
+			[order](Rect& rl, Rect& rr) { 
+				if (order == SortOrder::TOLOWER)
+					return rl.height > rr.height; 
+				return rl.height < rr.height;
 			}
 		);
-	}
+	} 
 	else if (sort == SortType::BYSPACE) {
 		std::sort(
 			items.begin(), items.end(), 
-			[](Rect& rl, Rect& rr) { 
-				return rl.height*rl.width < rr.height*rr.width; 
+			[order](Rect& rl, Rect& rr) { 
+				if (order == SortOrder::TOLOWER)
+					return rl.height*rl.width > rr.height*rr.width; 
+				return rl.height*rl.width < rr.height*rr.width;
 			}
 		);
 	}
+	else if (sort == SortType::BYWIDTH) {
+		std::sort(
+			items.begin(), items.end(),
+			[order](Rect& rl, Rect& rr) {
+				if (order == SortOrder::TOLOWER)
+					return rl.width > rr.width;
+				return rl.width < rr.width;
+			}
+		);
+	}
+
+	m_items = items;
+
 	return true;
 }
 
+bool CuttingStockAlgorithm::TryToPack(int &startX, Rect &item, std::vector<Rect> &curItemVec, int &k) {
+	if (startX + item.width < m_stockWidth) {
+		std::pair<int, int> maxYPair = findMaxY(startX, startX + item.width);
+		int maxY = maxYPair.first;
+
+		if (maxY + item.height > m_stockHeight) {
+			return false;
+		}
+
+		item.packed = true;
+		item.x = startX;
+		item.y = maxY;
+		curItemVec.push_back(item);
+		startX += item.width;
+
+		k = maxYPair.second;
+
+		return true;
+	}
+	return false;
+}
+
 std::vector<Rect> CuttingStockAlgorithm::CutStock() {
+	Rect item;
+	item.x = 0;
+	item.y = 0;
+	item.height = 0;
+	item.width = m_stockWidth;
+	m_packedItems.push_back(std::vector<Rect>{ item });
+
 	while (true) {
-		int startX = 0;
+		std::pair<int, int> maxYPair;
+
+		int prevItemsCount = (m_packedItems.size() > 0) ? m_packedItems[m_packedItems.size() - 1].size() : 0;
+		std::vector<Rect>* prevItemVec = (m_packedItems.size() > 0) ? &m_packedItems[m_packedItems.size() - 1] : nullptr;
+
+		int k = 0;
 		std::vector<Rect> curItemVec;
-		for (int i = 0; i < m_items.size(); ++i) {
-			if (m_items[i].packed == false && (startX + m_items[i].width < m_stockWidth)) {
-				int maxY = findMaxY(startX, startX + m_items[i].width);
-
-				if (maxY + m_items[i].height > m_stockHeight) {
-					continue;
+		while (k < prevItemsCount) {
+			int startX = (*prevItemVec)[k].x;
+			for (int i = 0; i < m_items.size(); ++i) {
+				if (m_items[i].packed == false) {
+					bool packed = TryToPack(startX, m_items[i], curItemVec, k);
+					if (!packed) {
+						std::swap(m_items[i].width, m_items[i].height);
+						packed = TryToPack(startX, m_items[i], curItemVec, k);
+						if (!packed) {
+							std::swap(m_items[i].width, m_items[i].height);
+						}
+					}
 				}
-
-				m_items[i].packed = true;
-				m_items[i].x = startX;
-				m_items[i].y = maxY;
-				curItemVec.push_back(m_items[i]);
-				startX += m_items[i].width;
 			}
+
+			++k;
 		}
 
 		if (curItemVec.size() == 0) {
@@ -54,29 +106,32 @@ std::vector<Rect> CuttingStockAlgorithm::CutStock() {
 		lastCurItem.x = lastCurItem.x + lastCurItem.width;
 		lastCurItem.width = m_stockWidth - lastCurItem.x;
 		lastCurItem.height = 0;
-		lastCurItem.y = findMaxY(lastCurItem.x, m_stockWidth);
+		maxYPair = findMaxY(lastCurItem.x, m_stockWidth);
+		lastCurItem.y = maxYPair.first;
 		curItemVec.push_back(lastCurItem);
 
-		m_packedItems.push_back(curItemVec);
+		m_packedItems.push_back(std::move(curItemVec));
 	}
 
 	return m_items;
 }
 
-int CuttingStockAlgorithm::findMaxY(int startX, int endX) {
+std::pair<int,int> CuttingStockAlgorithm::findMaxY(int startX, int endX) {
 	int maxY = 0;
 	int prevItemsCount = (m_packedItems.size() > 0) ? m_packedItems[m_packedItems.size() - 1].size() : 0;
 	std::vector<Rect>* prevItemVec = (m_packedItems.size() > 0) ? &m_packedItems[m_packedItems.size() - 1] : nullptr;
 
+	int maxYIndex = 0;
 	for (int j = 0; j < prevItemsCount; ++j) {
 		Rect& prevItem = (*prevItemVec)[j];
 		if (prevItem.x < endX && prevItem.x + prevItem.width > startX) {
 			if (prevItem.y + prevItem.height > maxY) {
 				maxY = prevItem.y + prevItem.height;
 			}
+			maxYIndex = j;
 		}
 	}
 
-	return maxY;
+	return { maxY, maxYIndex };
 }
 

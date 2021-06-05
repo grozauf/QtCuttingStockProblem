@@ -8,12 +8,18 @@ struct Rect {
 
 	int x, y;
 
-	bool packed;
+	bool packed = false;
 };
 
 enum class SortType {
 	BYSPACE,
-	BYHEIGHT
+	BYHEIGHT,
+	BYWIDTH
+};
+
+enum class SortOrder {
+	TOLOWER,
+	TOGREATER
 };
 
 class CuttingStockAlgorithm {
@@ -21,12 +27,13 @@ public:
 
 	CuttingStockAlgorithm() = default;
 
-	bool Init(int stockWidth, int stockHeight, std::vector<Rect> &items, SortType sort);
+	bool Init(int stockWidth, int stockHeight, std::vector<Rect> &items, SortType sort, SortOrder order);
 
 	std::vector<Rect> CutStock();
 
 private:
-	int findMaxY(int startX, int endX);
+	std::pair<int, int> findMaxY(int startX, int endX);
+	bool TryToPack(int &startX, Rect &item, std::vector<Rect> &curItemVec, int &k);
 
 private:
 	int m_stockWidth;
