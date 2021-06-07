@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-bool CuttingStockAlgorithm::Init(int stockWidth, int stockHeight, std::vector<Rect> &items, SortType sort, SortOrder order) {
+bool CuttingStockAlgorithm::init(int stockWidth, int stockHeight, std::vector<Rect> &items, SortType sort, SortOrder order) {
 	m_stockWidth = stockWidth;
 	m_stockHeight = stockHeight;
 
@@ -42,7 +42,8 @@ bool CuttingStockAlgorithm::Init(int stockWidth, int stockHeight, std::vector<Re
 	return true;
 }
 
-bool CuttingStockAlgorithm::TryToPack(int &startX, Rect &item, std::vector<Rect> &curItemVec, int &k) {
+// проверяем поместится ли деталь в выбранную позицию
+bool CuttingStockAlgorithm::tryToPack(int &startX, Rect &item, std::vector<Rect> &curItemVec, int &prevItemIndex) {
 	if (startX + item.width < m_stockWidth) {
 		std::pair<int, int> maxYPair = findMaxY(startX, startX + item.width);
 		int maxY = maxYPair.first;
@@ -57,14 +58,14 @@ bool CuttingStockAlgorithm::TryToPack(int &startX, Rect &item, std::vector<Rect>
 		curItemVec.push_back(item);
 		startX += item.width;
 
-		k = maxYPair.second;
+		prevItemIndex = maxYPair.second;
 
 		return true;
 	}
 	return false;
 }
 
-std::vector<Rect> CuttingStockAlgorithm::CutStock() {
+std::vector<Rect> CuttingStockAlgorithm::cutStock() {
 	Rect item;
 	item.x = 0;
 	item.y = 0;
@@ -78,24 +79,27 @@ std::vector<Rect> CuttingStockAlgorithm::CutStock() {
 		int prevItemsCount = (m_packedItems.size() > 0) ? m_packedItems[m_packedItems.size() - 1].size() : 0;
 		std::vector<Rect>* prevItemVec = (m_packedItems.size() > 0) ? &m_packedItems[m_packedItems.size() - 1] : nullptr;
 
-		int k = 0;
+		int prevItemIndex = 0;
 		std::vector<Rect> curItemVec;
-		while (k < prevItemsCount) {
-			int startX = (*prevItemVec)[k].x;
+		while (prevItemIndex < prevItemsCount) {
+			int startX = (*prevItemVec)[prevItemIndex].x;
 			for (int i = 0; i < m_items.size(); ++i) {
 				if (m_items[i].packed == false) {
-					bool packed = TryToPack(startX, m_items[i], curItemVec, k);
+					// пытаемся упаковать деталь как есть
+					bool packed = tryToPack(startX, m_items[i], curItemVec, prevItemIndex);
 					if (!packed) {
+						// если упаковать не получилось, то поварачиваем деталь на 90 градусов и пытаемся снова
 						std::swap(m_items[i].width, m_items[i].height);
-						packed = TryToPack(startX, m_items[i], curItemVec, k);
+						packed = tryToPack(startX, m_items[i], curItemVec, prevItemIndex);
 						if (!packed) {
+							// если опять не получилось упаковать, то возвращаем деталь в исходное положение
 							std::swap(m_items[i].width, m_items[i].height);
 						}
 					}
 				}
 			}
 
-			++k;
+			++prevItemIndex;
 		}
 
 		if (curItemVec.size() == 0) {
@@ -116,6 +120,8 @@ std::vector<Rect> CuttingStockAlgorithm::CutStock() {
 	return m_items;
 }
 
+// находим координату y для упаковки и индекс последнего изделия из предыдущего уровня, который пересекается с
+// с рассматриваемым блоком
 std::pair<int,int> CuttingStockAlgorithm::findMaxY(int startX, int endX) {
 	int maxY = 0;
 	int prevItemsCount = (m_packedItems.size() > 0) ? m_packedItems[m_packedItems.size() - 1].size() : 0;

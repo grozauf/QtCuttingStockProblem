@@ -56,9 +56,9 @@ void QtCuttingStockProblem::cutAndShow() {
 	}
 
 	CuttingStockAlgorithm cuttingAlgorithm;
-	cuttingAlgorithm.Init(stockWidth, stockHeight, m_itemVec, sort, order);
+	cuttingAlgorithm.init(stockWidth, stockHeight, m_itemVec, sort, order);
 
-	m_itemVec = cuttingAlgorithm.CutStock();
+	m_itemVec = cuttingAlgorithm.cutStock();
 
 	m_widgetOutput->setStockGeometry(stockWidth, stockHeight);
 	m_widgetOutput->setItems(m_itemVec);
@@ -73,6 +73,7 @@ void QtCuttingStockProblem::cutAndShow() {
 	}
 	int restSpace = stockHeight * stockWidth - packedSpace;
 	m_labelRestSpace->setText(QString::fromLocal8Bit("Площадь оставшегося материала: %1").arg(restSpace));
+	saveResults(sort, order, restSpace);
 }
 
 void QtCuttingStockProblem::openFile() {
@@ -95,7 +96,7 @@ void QtCuttingStockProblem::readFile() {
 		Rect item;
 		in >> item.width >> item.height;
 		if (item.width == 0 || item.height == 0) {
-			continue;
+			break;
 		}
 
 		if (item.height > item.width) {
@@ -105,4 +106,33 @@ void QtCuttingStockProblem::readFile() {
 		m_itemVec.push_back(item);
 	}
 
+}
+
+void QtCuttingStockProblem::saveResults(SortType sort, SortOrder order, int restSpace)
+{
+	int stockWidth = ui.lineEditStockWidth->text().toInt();
+	int stockHeight = ui.lineEditStockHeight->text().toInt();
+
+	QString fileName = QString("result_%1x%2_%3_%4.txt").arg(
+		stockWidth).arg(
+			stockHeight).arg(
+				QString::fromStdString(SortOrderToString(order))).arg(
+					QString::fromStdString(SortTypeToString(sort)));
+	QFileInfo fileInfo(m_itemsFileName);
+	fileName = fileInfo.dir().absolutePath() + QString("\\") + fileName;
+	QFile file(fileName);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+		return;
+	}
+
+	QTextStream out(&file);
+
+	out << "Rest space: " << restSpace << endl;
+	for (auto& rec : m_itemVec) {
+		out << "Item: "
+			<< "packed: " << ((rec.packed) ? "true " : "false ")
+			<< "width: " << rec.width << " height: " << rec.height
+			<< " x: " << ((rec.packed) ? QString::number(rec.x) : "-")
+			<< " y: " << ((rec.packed) ? QString::number(rec.y) : "-") << endl;
+	}
 }

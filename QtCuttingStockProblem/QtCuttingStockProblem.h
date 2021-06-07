@@ -23,6 +23,9 @@ public Q_SLOTS:
     void openFile();
 
 private:
+	void saveResults(SortType sort, SortOrder order, int restSpace);
+
+private:
     Ui::QtCuttingStockProblemClass ui;
 	QLabel* m_labelRestSpace;
 	QString m_itemsFileName;
