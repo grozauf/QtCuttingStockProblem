@@ -12,7 +12,6 @@ QtCuttingStockProblem::QtCuttingStockProblem(QWidget *parent)
 {
     ui.setupUi(this);
 	m_labelRestSpace = new QLabel(ui.centralWidget);
-	m_labelRestSpace->setGeometry(0, 0, 300, 20);
 
 	m_widgetOutput = new OutputWidget(ui.centralWidget);
 	m_widgetOutput->setObjectName(QStringLiteral("widgetOutput"));
@@ -72,6 +71,7 @@ void QtCuttingStockProblem::cutAndShow() {
 		}
 	}
 	int restSpace = stockHeight * stockWidth - packedSpace;
+	m_labelRestSpace->setGeometry(20, 10, ui.centralWidget->width(), 20);
 	m_labelRestSpace->setText(QString::fromLocal8Bit("Площадь оставшегося материала: %1").arg(restSpace));
 	saveResults(sort, order, restSpace);
 }
@@ -110,6 +110,10 @@ void QtCuttingStockProblem::readFile() {
 
 void QtCuttingStockProblem::saveResults(SortType sort, SortOrder order, int restSpace)
 {
+	if (m_itemsFileName.isEmpty()) {
+		return;
+	}
+
 	int stockWidth = ui.lineEditStockWidth->text().toInt();
 	int stockHeight = ui.lineEditStockHeight->text().toInt();
 

@@ -13,6 +13,11 @@ void OutputWidget::paintEvent(QPaintEvent* e) {
 
 	setGeometry(((QWidget*)parent())->geometry());
 
+	if (m_stockWidth == 0 || m_stockHeight == 0 || m_items.size() == 0) {
+		return;
+	}
+
+
 	QPainter painter(this);
 	painter.setPen(QPen(Qt::black, 2, Qt::SolidLine));
 

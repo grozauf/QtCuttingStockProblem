@@ -44,7 +44,8 @@ bool CuttingStockAlgorithm::init(int stockWidth, int stockHeight, std::vector<Re
 
 // проверяем поместится ли деталь в выбранную позицию
 bool CuttingStockAlgorithm::tryToPack(int &startX, Rect &item, std::vector<Rect> &curItemVec, int &prevItemIndex) {
-	if (startX + item.width < m_stockWidth) {
+	if (startX + item.width <= m_stockWidth) {
+		// ищем максимальную высоту, на которую можно пристроить элемент
 		std::pair<int, int> maxYPair = findMaxY(startX, startX + item.width);
 		int maxY = maxYPair.first;
 
@@ -66,6 +67,7 @@ bool CuttingStockAlgorithm::tryToPack(int &startX, Rect &item, std::vector<Rect>
 }
 
 std::vector<Rect> CuttingStockAlgorithm::cutStock() {
+	// фиктивный элемент с нулевой высотой на нулевом слое
 	Rect item;
 	item.x = 0;
 	item.y = 0;
@@ -76,7 +78,9 @@ std::vector<Rect> CuttingStockAlgorithm::cutStock() {
 	while (true) {
 		std::pair<int, int> maxYPair;
 
+		// получаем количество элементов на предыдущем уровне
 		int prevItemsCount = (m_packedItems.size() > 0) ? m_packedItems[m_packedItems.size() - 1].size() : 0;
+		// получаем указатель на вектов элементов предыдущего уровня
 		std::vector<Rect>* prevItemVec = (m_packedItems.size() > 0) ? &m_packedItems[m_packedItems.size() - 1] : nullptr;
 
 		int prevItemIndex = 0;
@@ -106,6 +110,8 @@ std::vector<Rect> CuttingStockAlgorithm::cutStock() {
 			break;
 		}
 
+		// добавляем в текущий слой фиктивный элемент с нулевой высотой, 
+		// начинающийся после последнего элемента в уровне и заканцивающийся границей общей области
 		Rect lastCurItem = curItemVec[curItemVec.size() - 1];
 		lastCurItem.x = lastCurItem.x + lastCurItem.width;
 		lastCurItem.width = m_stockWidth - lastCurItem.x;
@@ -114,6 +120,7 @@ std::vector<Rect> CuttingStockAlgorithm::cutStock() {
 		lastCurItem.y = maxYPair.first;
 		curItemVec.push_back(lastCurItem);
 
+		// добавляем новый слой упакованных элементов
 		m_packedItems.push_back(std::move(curItemVec));
 	}
 
